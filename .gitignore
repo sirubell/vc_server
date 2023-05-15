@@ -1,0 +1,5 @@
+__pycache__
+vc_server/__pycache__
+
+.env
+vc_server.db
