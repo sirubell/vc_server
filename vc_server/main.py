@@ -1,5 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 from fastapi_login import LoginManager
 from datetime import timedelta
 from sqlalchemy.orm import Session
@@ -74,6 +74,18 @@ def get_current_key(
     return current_user.user_shares
 
 
+@app.get("/getMe")
+def get_me(user: schemas.User = Depends(manager), db: Session = Depends(get_db)):
+    """
+    helper function
+    得到自己（使用者）的資訊
+    """
+    return {
+        "userName": user.userName,
+        "email": user.email,
+    }
+
+
 @app.post("/createUser", response_model=schemas.User)
 async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     exception = HTTPException(
@@ -117,7 +129,7 @@ def login(user: schemas.UserBase, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if not db_user:
         raise exception
-    if not Hasher.verify_password(user.password, db_user.hashed_password):
+    if not Hasher.verify_password(user.password, db_user.password):
         raise exception
     if not db_user.is_active:
         raise HTTPException(status_code=400, detail="Not active yet.")
@@ -125,7 +137,7 @@ def login(user: schemas.UserBase, db: Session = Depends(get_db)):
     token = manager.create_access_token(
         data=dict(sub=user.email), expires=timedelta(days=1)
     )
-    response = JSONResponse(None)
+    response = Response(None)
     manager.set_cookie(response, token)
 
     return response
