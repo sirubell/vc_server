@@ -9,10 +9,10 @@ class UserShare(Base):
 
     doorName = Column(String)
     share = Column(String, primary_key=True, unique=True, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     validated = Column(Boolean, default=True)
     updated = Column(Boolean, default=False)
 
+    owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="user_shares")
 
 
@@ -32,7 +32,6 @@ class User(Base):
 class Door(Base):
     __tablename__ = "doors"
 
-    id = Column(Integer, primary_key=True, index=True)
-    doorName = Column(String, unique=True, index=True)
-    doorShare = Column(String)
-    secret = Column(String)
+    doorName = Column(String, primary_key=True, unique=True, index=True)
+    doorShare = Column(String, unique=True, index=True)
+    secret = Column(String, unique=True, index=True)

@@ -1,9 +1,12 @@
 from pydantic import BaseModel, EmailStr
 
 
-class UserShare(BaseModel):
+class UserShareBase(BaseModel):
     doorName: str
     share: str
+
+
+class UserShare(UserShareBase):
     owner_id = int
     validated = bool
     updated = bool
@@ -14,14 +17,24 @@ class UserShare(BaseModel):
 
 class UserBase(BaseModel):
     email: EmailStr
+
+
+class UserLogin(UserBase):
     password: str
 
 
-class UserCreate(UserBase):
+class UserData(UserBase):
     userName: str
 
+    class Config:
+        orm_mode = True
 
-class User(UserBase):
+
+class UserCreate(UserLogin, UserData):
+    pass
+
+
+class User(UserData):
     id: int
     is_active: bool
     user_shares: list[UserShare] = []
@@ -30,11 +43,11 @@ class User(UserBase):
         orm_mode = True
 
 
-class DoorCreate(BaseModel):
+class DoorName(BaseModel):
     doorName: str
 
 
-class DoorSecret(DoorCreate):
+class DoorSecret(DoorName):
     secret: str
 
 
@@ -43,3 +56,8 @@ class Door(DoorSecret):
 
     class Config:
         orm_mode = True
+
+
+class UserUpdate(BaseModel):
+    deleteDoors: list[DoorName] = []
+    newShares: list[UserShareBase] = []

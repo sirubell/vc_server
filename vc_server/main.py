@@ -70,23 +70,29 @@ def get_current_key(
 ):
     """helper function 回傳把使用者的所有share"""
 
-    current_user = crud.get_user_by_email(db, current_user.email)
+    current_user = crud.get_user(db, current_user.id)
     return current_user.user_shares
 
 
-@app.get("/getMe")
+@app.get("/getMe", response_model=schemas.User)
 def get_me(user: schemas.User = Depends(manager), db: Session = Depends(get_db)):
     """
     helper function
     得到自己（使用者）的資訊
     """
-    return {
-        "userName": user.userName,
-        "email": user.email,
-    }
+    return crud.get_user(db, user.id)
 
 
-@app.post("/createUser", response_model=schemas.User)
+@app.get("/getAllUserShares", response_model=List[schemas.UserShare])
+def get_all_user_shares(db: Session = Depends(get_db)):
+    """
+    helper function
+    得到所有使用者Share
+    """
+    return crud.get_user_shares(db)
+
+
+@app.post("/createUser", response_model=schemas.UserData)
 async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     exception = HTTPException(
         status_code=400, detail="The name or email is already in use."
@@ -99,9 +105,7 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise exception
 
-    code = generate_validation_code()
-    await send_email(user.email, code)
-    return crud.create_user(db=db, user=user, code=code)
+    return await crud.create_user(db=db, user=user)
 
 
 @app.get("/validateEmail", status_code=status.HTTP_204_NO_CONTENT)
@@ -121,8 +125,8 @@ def delete_user(
     crud.delete_user(db, user.id)
 
 
-@app.post("/login")
-def login(user: schemas.UserBase, db: Session = Depends(get_db)):
+@app.post("/login", status_code=status.HTTP_204_NO_CONTENT)
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     exception = HTTPException(
         status_code=400, detail="Email or password is not correct."
     )
@@ -137,7 +141,8 @@ def login(user: schemas.UserBase, db: Session = Depends(get_db)):
     token = manager.create_access_token(
         data=dict(sub=user.email), expires=timedelta(days=1)
     )
-    response = Response(None)
+
+    response = Response(None, status_code=status.HTTP_204_NO_CONTENT)
     manager.set_cookie(response, token)
 
     return response
@@ -145,7 +150,7 @@ def login(user: schemas.UserBase, db: Session = Depends(get_db)):
 
 @app.post("/requestKey", status_code=status.HTTP_204_NO_CONTENT)
 def request_key(
-    door: schemas.DoorCreate,
+    door: schemas.DoorName,
     user: schemas.User = Depends(manager),
     db: Session = Depends(get_db),
 ):
@@ -160,9 +165,9 @@ def request_key(
     crud.create_user_share(db, current_user, db_door)
 
 
-@app.delete("/deleteKey")
+@app.delete("/deleteKey", status_code=status.HTTP_204_NO_CONTENT)
 def delete_key(
-    door: schemas.DoorCreate,
+    door: schemas.DoorName,
     user: schemas.User = Depends(manager),
     db: Session = Depends(get_db),
 ):
@@ -172,13 +177,13 @@ def delete_key(
     pass
 
 
-@app.get("/userUpdate")
+@app.get("/userUpdate", response_model=schemas.UserUpdate)
 def user_update(user=Depends(manager), db: Session = Depends(get_db)):
-    response = {"deleteDoors": [], "newShares": {}}
+    response = schemas.UserUpdate()
     shares = crud.get_not_yet_update_shares(db, user.id)
 
     for share in shares:
-        response["newShares"][share.doorName] = share.share
+        response.newShares = share
 
     crud.update_shares(db, user.id)
 
@@ -186,7 +191,7 @@ def user_update(user=Depends(manager), db: Session = Depends(get_db)):
 
 
 @app.post("/createDoor", response_model=schemas.Door)
-def create_door(door: schemas.DoorCreate, db: Session = Depends(get_db)):
+def create_door(door: schemas.DoorName, db: Session = Depends(get_db)):
     exception = HTTPException(status_code=400, detail="The name is already in use.")
     db_door = crud.get_door_by_doorname(db, door.doorName)
     if db_door:
@@ -195,8 +200,8 @@ def create_door(door: schemas.DoorCreate, db: Session = Depends(get_db)):
     return crud.create_door(db, door.doorName)
 
 
-@app.post("/updateDoor")
-def update_door(door: schemas.DoorSecret, db: Session = Depends(get_db)):
+@app.post("/updateDoor", response_model=schemas.Door)
+def update_door(door: schemas.Door, db: Session = Depends(get_db)):
     return crud.get_door_by_secret(db, door.secret)
 
 

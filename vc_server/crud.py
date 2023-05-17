@@ -1,10 +1,15 @@
 from sqlalchemy.orm import Session
 
-from . import models, schemas
+from . import models, schemas, share, email
 from .hashing import Hasher
+from .config import conf
 
-import random
+
 import base64
+
+
+def get_user_shares(db: Session):
+    return db.query(models.UserShare).all()
 
 
 def get_user(db: Session, user_id: int):
@@ -46,14 +51,21 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
-def create_user(db: Session, user: schemas.UserCreate, code: str):
+async def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = Hasher.get_password_hash(user.password)
+    code = ""
+    if conf["need_email_validation"]:
+        code = email.generate_validation_code()
+        await email.send_email(user.email, code)
+
     db_user = models.User(
         userName=user.userName,
         email=user.email,
         password=hashed_password,
         email_valid_code=code,
+        is_active=not conf["need_email_validation"],
     )
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -79,49 +91,19 @@ def get_doors(db: Session, skip: int = 0, limit: int = 100):
 def delete_door(db: Session, door: schemas.DoorSecret):
     db.query(models.Door).filter(models.Door.secret == door.secret).delete()
     db.commit()
-    # TODO delete user shares later
+    # TODO don't delete user shares immediately
     db.query(models.UserShare).filter(
         models.UserShare.doorName == door.doorName
     ).delete()
 
 
-def create_door(db: Session, doorName: str):
-    secret = random.randbytes(50)
-    doorShare = bytearray(200)
-    doorNameBytes = doorName.encode().ljust(50, b"\0")
-
-    white = [0, 0, 1, 1]
-    black = [0, 1, 1, 1]
-
-    def calculate_halfbyte(color, lowerbit):
-        shuffled = random.sample(black, len(black))
-        tmp = 0
-        tmp |= shuffled[0] << 0
-        tmp |= shuffled[1] << 1
-        tmp |= shuffled[2] << 2
-        tmp |= shuffled[3] << 3
-
-        return tmp << (0 if lowerbit else 4)
-
-    """
-    尋訪門的名字的每個bit，如果為1則為黑色，如果為0則為白色。
-    依序把shuffled過的list填入door share裡。
-    """
-    for i in range(50):
-        byte = doorNameBytes[i]
-        for j in range(8):
-            lowerbit = j % 2 == 0
-            share_index = i * 4 + j // 2
-            if (byte >> j) & 1:
-                """black"""
-                doorShare[share_index] |= calculate_halfbyte(black, lowerbit)
-            else:
-                """white"""
-                doorShare[share_index] |= calculate_halfbyte(white, lowerbit)
+def create_door(db: Session, door_name: str):
+    secret = share.create_secret()
+    door_share = share.create_door_share(door_name)
 
     db_door = models.Door(
-        doorName=doorName,
-        doorShare=base64.b64encode(doorShare).decode(),
+        doorName=door_name,
+        doorShare=base64.b64encode(door_share).decode(),
         secret=base64.b64encode(secret).decode(),
     )
     db.add(db_door)
@@ -130,89 +112,10 @@ def create_door(db: Session, doorName: str):
     return db_door
 
 
-table = [
-    [
-        {
-            # secret white, user white
-            3: [5, 6, 9, 10],
-            5: [3, 6, 9, 12],
-            6: [3, 5, 10, 12],
-            7: [3, 5, 6],
-            9: [3, 5, 10, 12],
-            10: [3, 6, 9, 12],
-            11: [3, 9, 10],
-            12: [5, 6, 9, 10],
-            13: [5, 9, 12],
-            14: [6, 10, 12],
-        },
-        {
-            # secret white, user black
-            3: [7, 11],
-            5: [7, 13],
-            6: [7, 14],
-            7: [7],
-            9: [11, 13],
-            10: [11, 14],
-            11: [11],
-            12: [13, 14],
-            13: [13],
-            14: [14],
-        },
-    ],
-    [
-        {
-            # secret black, user white
-            3: [12],
-            5: [10],
-            6: [9],
-            7: [9, 10, 12],
-            9: [6],
-            10: [5],
-            11: [5, 6, 12],
-            12: [3],
-            13: [3, 6, 10],
-            14: [3, 5, 9],
-        },
-        {
-            # secret black, user black
-            3: [13, 14],
-            5: [11, 14],
-            6: [11, 13],
-            7: [11, 13, 14],
-            9: [7, 14],
-            10: [7, 13],
-            11: [7, 13, 14],
-            12: [7, 11],
-            13: [7, 11, 14],
-            14: [7, 11, 13],
-        },
-    ],
-]
-
-
-def create_user_share(db: Session, user: schemas.User, door: schemas.Door):
-    user_name = user.userName.encode().ljust(50, b"\0")
+def create_user_share(db: Session, user: schemas.UserData, door: schemas.Door):
     secret = base64.b64decode(door.secret)
     door_share = base64.b64decode(door.doorShare)
-    user_share = bytearray(200)
-
-    """
-    尋訪所有secret bit，同時找到相對應的door bit還有使用者名稱bit(各有四個)
-    """
-    for i in range(50):
-        secret_byte = secret[i]
-        user_name_byte = user_name[i]
-        for j in range(8):
-            secret_color = (secret_byte >> j) & 1
-            user_color = (user_name_byte >> j) & 1
-            share_index = i * 4 + j // 2
-            shift = 0 if j % 2 == 0 else 4
-            door_share_4bit = (door_share[share_index] >> shift) & 0xF
-
-            user_choices = table[secret_color][user_color][door_share_4bit]
-            user_share_4bit = random.choice(user_choices)
-
-            user_share[share_index] |= user_share_4bit << shift
+    user_share = share.create_user_share(user.userName, secret, door_share)
 
     db_user_share = models.UserShare(
         doorName=door.doorName,
