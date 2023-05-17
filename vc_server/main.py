@@ -62,7 +62,16 @@ def get_doors(db: Session = Depends(get_db)):
     return crud.get_doors(db)
 
 
-@app.get("/getCurrentKeys", response_model=List[schemas.UserShare])
+@app.get("/getMe", response_model=schemas.User)
+def get_me(user: schemas.User = Depends(manager), db: Session = Depends(get_db)):
+    """
+    helper function
+    得到自己（使用者）的資訊
+    """
+    return crud.get_user(db, user.id)
+
+
+@app.get("/getMyKeys", response_model=List[schemas.UserShare])
 def get_current_key(
     current_user: schemas.User = Depends(manager),
     db: Session = Depends(get_db),
@@ -71,15 +80,6 @@ def get_current_key(
 
     current_user = crud.get_user(db, current_user.id)
     return current_user.user_shares
-
-
-@app.get("/getMe", response_model=schemas.User)
-def get_me(user: schemas.User = Depends(manager), db: Session = Depends(get_db)):
-    """
-    helper function
-    得到自己（使用者）的資訊
-    """
-    return crud.get_user(db, user.id)
 
 
 @app.get("/getAllUserShares", response_model=List[schemas.UserShare])
