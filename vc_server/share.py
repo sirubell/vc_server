@@ -356,16 +356,3 @@ def test_get_share_name():
 
 def encode_base64_str(bs: bytes) -> str:
     return base64.b64encode(bs).decode()
-
-
-# if __name__ == "__main__":
-#     door_name = "123"
-#     user_name = "王景誠"
-#
-#     secret = create_secret()
-#     door_share = create_door_share(door_name)
-#     user_share = create_user_share(user_name, secret, door_share)
-#
-#     print("secret: ", encode_base64_str(secret))
-#     print("door share: ", encode_base64_str(door_share))
-#     print("user share", encode_base64_str(user_share))
