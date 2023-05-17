@@ -8,7 +8,6 @@ from typing import List
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .hashing import Hasher
-from .email import send_email, generate_validation_code
 from .config import conf
 
 
@@ -125,7 +124,7 @@ def delete_user(
     crud.delete_user(db, user.id)
 
 
-@app.post("/login", status_code=status.HTTP_204_NO_CONTENT)
+@app.post("/login")
 def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     exception = HTTPException(
         status_code=400, detail="Email or password is not correct."
@@ -142,7 +141,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
         data=dict(sub=user.email), expires=timedelta(days=1)
     )
 
-    response = Response(None, status_code=status.HTTP_204_NO_CONTENT)
+    response = Response(None)
     manager.set_cookie(response, token)
 
     return response
@@ -171,7 +170,7 @@ def delete_key(
     user: schemas.User = Depends(manager),
     db: Session = Depends(get_db),
 ):
-    current_user = crud.get_user_by_email(db, user.email)
+    user = crud.get_user(db, user.id)
     # TODO
 
     pass
@@ -201,7 +200,7 @@ def create_door(door: schemas.DoorName, db: Session = Depends(get_db)):
 
 
 @app.post("/updateDoor", response_model=schemas.Door)
-def update_door(door: schemas.Door, db: Session = Depends(get_db)):
+def update_door(door: schemas.DoorSecret, db: Session = Depends(get_db)):
     return crud.get_door_by_secret(db, door.secret)
 
 
