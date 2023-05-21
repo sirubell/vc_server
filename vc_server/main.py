@@ -182,7 +182,7 @@ def user_update(user=Depends(manager), db: Session = Depends(get_db)):
     shares = crud.get_not_yet_update_shares(db, user.id)
 
     for share in shares:
-        response.newShares = share
+        response.newShares.append(share)
 
     crud.update_shares(db, user.id)
 

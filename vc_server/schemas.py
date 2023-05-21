@@ -5,6 +5,9 @@ class UserShareBase(BaseModel):
     doorName: str
     share: str
 
+    class Config:
+        orm_mode = True
+
 
 class UserShare(UserShareBase):
     owner_id = int
@@ -61,3 +64,6 @@ class Door(DoorSecret):
 class UserUpdate(BaseModel):
     deleteDoors: list[DoorName] = []
     newShares: list[UserShareBase] = []
+
+    class Config:
+        orm_mode = True
