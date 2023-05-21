@@ -161,7 +161,6 @@ def test_create_user_share():
     user_name = "1"
     secret = int.to_bytes(28)
     door_share = b"\xe5\xbeu\x9d"
-    decoded_door_share = decode(door_share, decode_share_byte, length)
     user_share = create_user_share(user_name, secret, door_share, length)
     decoded_user_share = decode(user_share, decode_share_byte, length)
     assert get_share_name(decoded_user_share) == user_name

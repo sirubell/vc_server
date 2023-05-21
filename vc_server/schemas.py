@@ -1,69 +1,94 @@
 from pydantic import BaseModel, EmailStr
 
 
-class UserShareBase(BaseModel):
-    doorName: str
+class Share(BaseModel):
     share: str
 
+
+class UserShareName(BaseModel):
+    user_name: str
+    door_name: str
+
+
+class UserShareData(UserShareName, Share):
     class Config:
         orm_mode = True
 
 
-class UserShare(UserShareBase):
-    owner_id = int
-    validated = bool
-    updated = bool
+class UserShare(UserShareData):
+    is_validated: bool
+    is_blacklisted: bool
 
     class Config:
         orm_mode = True
 
 
-class UserBase(BaseModel):
+class UserName(BaseModel):
+    user_name: str
+
+
+class UserEmail(BaseModel):
     email: EmailStr
 
 
-class UserLogin(UserBase):
+class UserPassword(BaseModel):
     password: str
 
 
-class UserData(UserBase):
-    userName: str
+class UserCreate(UserName, UserEmail, UserPassword):
+    pass
+
+
+class UserData(UserName, UserEmail):
+    is_active: bool
+    is_admin: bool
 
     class Config:
         orm_mode = True
 
 
-class UserCreate(UserLogin, UserData):
-    pass
-
-
 class User(UserData):
-    id: int
-    is_active: bool
     user_shares: list[UserShare] = []
 
     class Config:
         orm_mode = True
 
 
+class UserUpdate(BaseModel):
+    shares: list[UserShare] = []
+
+    class Config:
+        orm_mode = True
+
+
 class DoorName(BaseModel):
-    doorName: str
+    door_name: str
 
 
-class DoorSecret(DoorName):
+class DoorSecret(BaseModel):
     secret: str
 
 
-class Door(DoorSecret):
-    doorShare: str
+class DoorData(DoorName, Share, DoorSecret):
+    class Config:
+        orm_mode = True
+
+
+class Door(DoorData):
+    door_keys: list[UserShare] = []
 
     class Config:
         orm_mode = True
 
 
-class UserUpdate(BaseModel):
-    deleteDoors: list[DoorName] = []
-    newShares: list[UserShareBase] = []
+class DoorUpdate(DoorData, Share):
+    is_blacklisted: list[str] = []
 
-    class Config:
-        orm_mode = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    user_name: str | None = None

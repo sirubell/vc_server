@@ -1,21 +1,19 @@
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
 
 import random
-from .config import conf
+from vc_server import config
 
 conf = ConnectionConfig(
-    MAIL_USERNAME=conf["MAIL_USERNAME"],
-    MAIL_PASSWORD=conf["MAIL_PASSWORD"],
-    MAIL_FROM=conf["MAIL_FROM"],
-    MAIL_PORT=int(conf["MAIL_PORT"]),
-    MAIL_SERVER=conf["MAIL_SERVER"],
+    MAIL_USERNAME=config.mail_username,
+    MAIL_PASSWORD=config.mail_password,
+    MAIL_FROM=config.mail_from,
+    MAIL_PORT=config.mail_port,
+    MAIL_SERVER=config.mail_server,
     MAIL_STARTTLS=False,
     MAIL_SSL_TLS=True,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True,
 )
-
-prefix = " 驗證碼："
 
 
 def generate_validation_code():
@@ -26,6 +24,7 @@ def generate_validation_code():
 
 
 async def send_email(email_to: str, code: str):
+    prefix = " 驗證碼："
     message = MessageSchema(
         subject="視覺密碼門鎖系統信箱驗證",
         recipients=[email_to],
