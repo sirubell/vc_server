@@ -27,6 +27,15 @@ def get_doors(db: Session = Depends(get_db)):
     return crud.get_doors(db)
 
 
+@router.get("/getAllUserShares", response_model=List[schemas.UserShare])
+def get_all_user_shares(db: Session = Depends(get_db)):
+    """
+    helper function
+    得到所有使用者Share
+    """
+    return crud.get_user_shares(db)
+
+
 @router.get("/getMe", response_model=schemas.User)
 def get_me(
     current_user: schemas.User = Depends(get_current_user),
@@ -41,15 +50,6 @@ def get_current_key(
     db: Session = Depends(get_db),
 ):
     return current_user.user_shares
-
-
-@router.get("/getAllUserShares", response_model=List[schemas.UserShare])
-def get_all_user_shares(db: Session = Depends(get_db)):
-    """
-    helper function
-    得到所有使用者Share
-    """
-    return crud.get_user_shares(db)
 
 
 @router.post("/createAdmin", status_code=status.HTTP_204_NO_CONTENT)
