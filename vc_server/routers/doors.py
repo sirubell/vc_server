@@ -9,7 +9,7 @@ from vc_server import schemas
 router = APIRouter(prefix="/doors", tags=["doors"])
 
 
-@router.post("/createDoor", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/createDoor", response_model=schemas.DoorData)
 def create_door(door: schemas.DoorName, db: Session = Depends(get_db)):
     exception = HTTPException(
         status_code=400,
@@ -19,7 +19,7 @@ def create_door(door: schemas.DoorName, db: Session = Depends(get_db)):
     if db_door:
         raise exception
 
-    crud.create_door(db, door.door_name)
+    return crud.create_door(db, door.door_name)
 
 
 @router.post("/updateDoor", response_model=schemas.DoorUpdate)
