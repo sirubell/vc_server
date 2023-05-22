@@ -24,6 +24,7 @@ async def _create_user(user: schemas.UserCreate, db: Session, is_admin=False):
     if db_user:
         raise exception
 
+    code = None
     if need_email_validation:
         code = generate_validation_code()
         await send_email(user.email, code)
