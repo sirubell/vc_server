@@ -3,17 +3,18 @@ from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
 import random
 from vc_server import config
 
-conf = ConnectionConfig(
-    MAIL_USERNAME=config.mail_username,
-    MAIL_PASSWORD=config.mail_password,
-    MAIL_FROM=config.mail_from,
-    MAIL_PORT=config.mail_port,
-    MAIL_SERVER=config.mail_server,
-    MAIL_STARTTLS=False,
-    MAIL_SSL_TLS=True,
-    USE_CREDENTIALS=True,
-    VALIDATE_CERTS=True,
-)
+if config.need_email_validation:
+    conf = ConnectionConfig(
+        MAIL_USERNAME=config.mail_username,
+        MAIL_PASSWORD=config.mail_password,
+        MAIL_FROM=config.mail_from,
+        MAIL_PORT=config.mail_port,
+        MAIL_SERVER=config.mail_server,
+        MAIL_STARTTLS=False,
+        MAIL_SSL_TLS=True,
+        USE_CREDENTIALS=True,
+        VALIDATE_CERTS=True,
+    )
 
 
 def generate_validation_code():
