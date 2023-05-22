@@ -72,7 +72,7 @@ def delete_user(db: Session, user_name: str) -> None:
 
 
 def get_users(db: Session, offset: int = 0, limit: int = 100) -> list[models.User]:
-    db.query(models.User).offset(offset).limit(limit).all()
+    return db.query(models.User).offset(offset).limit(limit).all()
 
 
 def create_user(
