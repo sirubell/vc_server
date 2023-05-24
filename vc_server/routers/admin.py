@@ -10,6 +10,11 @@ from vc_server import schemas
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
+@router.get("/ping", status_code=status.HTTP_204_NO_CONTENT)
+def admin_ping(admin: schemas.User = Depends(get_admin)):
+    pass
+
+
 @router.put("/validateUserShare", status_code=status.HTTP_204_NO_CONTENT)
 def validate_user_share(
     user_share: schemas.Share,
