@@ -13,10 +13,12 @@ from vc_server import schemas
 router = APIRouter(tags=["users", "admin"])
 
 
-def authenticate_user(db: Session, email: str, password: str):
-    user = crud.get_user_by_email(db, email)
+def authenticate_user(db: Session, uesrname: str, password: str):
+    user = crud.get_user_by_email(db, uesrname)
     if not user:
-        return False
+        user = crud.get_user_by_user_name(db, uesrname)
+        if not user:
+            return False
     if not verify_password(password, user.hashed_password):
         return False
     return user
