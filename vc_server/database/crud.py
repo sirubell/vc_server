@@ -68,8 +68,9 @@ def get_user_by_email(db: Session, email: str) -> models.User | None:
 
 def delete_user(db: Session, user_name: str) -> None:
     db_user = db.query(models.User).filter(models.User.user_name == user_name)
-    db.delete(db_user)
-    db.commit()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
 
 
 def get_users(db: Session, offset: int = 0, limit: int = 100) -> list[models.User]:
@@ -130,15 +131,17 @@ def get_doors(db: Session, offset: int = 0, limit: int = 100) -> list[models.Doo
 def delete_door(db: Session, secret: str) -> None:
     db_door = db.query(models.Door).filter(
         models.Door.secret == secret).first()
-    db.delete(db_door)
-    db.commit()
+    if db_door:
+        db.delete(db_door)
+        db.commit()
 
 
 def delete_user_share(db: Session, share: str) -> None:
     db_user_share = db.query(models.UserShare).filter(
         models.UserShare.share == share)
-    db.delete(db_user_share)
-    db.commit()
+    if db_user_share:
+        db.delete(db_user_share)
+        db.commit()
 
 
 def create_door(db: Session, door_name: str) -> models.Door:
