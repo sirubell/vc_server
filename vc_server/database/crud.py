@@ -67,7 +67,7 @@ def get_user_by_email(db: Session, email: str) -> models.User | None:
 
 
 def delete_user(db: Session, user_name: str) -> None:
-    db_user = db.query(models.User).filter(models.User.user_name == user_name)
+    db_user = db.query(models.User).filter(models.User.user_name == user_name).first()
     if db_user:
         db.delete(db_user)
         db.commit()
