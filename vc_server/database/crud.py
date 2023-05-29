@@ -161,7 +161,7 @@ def create_door(db: Session, door_name: str) -> models.Door:
 
 
 def create_user_share(
-    db: Session, user: schemas.User, door: schemas.DoorData
+    db: Session, user: schemas.User, door: schemas.DoorData, is_validated: bool = False
 ) -> models.UserShare:
     secret = base64.b64decode(door.secret)
     door_share = base64.b64decode(door.share)
@@ -171,6 +171,7 @@ def create_user_share(
         user_name=user.user_name,
         door_name=door.door_name,
         share=base64.b64encode(user_share).decode(),
+        is_validated = is_validated,
     )
 
     db.add(db_user_share)
