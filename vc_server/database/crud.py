@@ -25,8 +25,7 @@ def get_user_shares(
     if is_validated:
         query = query.filter(models.UserShare.is_validated.is_(is_validated))
     if is_blacklisted:
-        query = query.filter(
-            models.UserShare.is_blacklisted.is_(is_blacklisted))
+        query = query.filter(models.UserShare.is_blacklisted.is_(is_blacklisted))
     return query.offset(offset).limit(limit).all()
 
 
@@ -101,8 +100,7 @@ def create_user(
 
 def get_user_by_validation_code(db: Session, code: str) -> models.User | None:
     return (
-        db.query(models.User).filter(
-            models.User.email_validation_code == code).first()
+        db.query(models.User).filter(models.User.email_validation_code == code).first()
     )
 
 
@@ -116,8 +114,7 @@ def get_door_by_secret(db: Session, secret: str) -> models.Door | None:
 
 def get_door_by_user_share(db: Session, user_share: str) -> models.Door | None:
     db_user_share = (
-        db.query(models.UserShare).filter(
-            models.UserShare.share == user_share).first()
+        db.query(models.UserShare).filter(models.UserShare.share == user_share).first()
     )
     if db_user_share is None:
         return None
@@ -129,16 +126,16 @@ def get_doors(db: Session, offset: int = 0, limit: int = 100) -> list[models.Doo
 
 
 def delete_door(db: Session, secret: str) -> None:
-    db_door = db.query(models.Door).filter(
-        models.Door.secret == secret).first()
+    db_door = db.query(models.Door).filter(models.Door.secret == secret).first()
     if db_door:
         db.delete(db_door)
         db.commit()
 
 
 def delete_user_share(db: Session, share: str) -> None:
-    db_user_share = db.query(models.UserShare).filter(
-        models.UserShare.share == share)
+    db_user_share = (
+        db.query(models.UserShare).filter(models.UserShare.share == share).first()
+    )
     if db_user_share:
         db.delete(db_user_share)
         db.commit()
@@ -171,7 +168,7 @@ def create_user_share(
         user_name=user.user_name,
         door_name=door.door_name,
         share=base64.b64encode(user_share).decode(),
-        is_validated = is_validated,
+        is_validated=is_validated,
     )
 
     db.add(db_user_share)
@@ -187,8 +184,7 @@ def update_user_share(db: Session, share: schemas.Share) -> schemas.UserShare | 
     db_user_share.is_blacklisted = True
     db.commit()
 
-    new_user_share = create_user_share(
-        db, db_user_share.user, db_user_share.door)
+    new_user_share = create_user_share(db, db_user_share.user, db_user_share.door)
     new_user_share.is_validated = True
     db.commit()
     db.refresh(new_user_share)
